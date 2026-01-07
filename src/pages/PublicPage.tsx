@@ -63,8 +63,8 @@ export function PublicPage() {
 
   // Client-facing look: lighter background, white page
   return (
-    <div style={{ background: "linear-gradient(180deg,#f8fafc 0%, #ffffff 50%)", minHeight: "100vh", color: "#0b1220" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 22px 40px" }}>
+    <div style={{ background: "radial-gradient(circle at top, #1f2937 0%, #0f172a 45%, #020617 100%)", minHeight: "100vh", color: "#e2e8f0" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 22px 48px" }}>
         {!data && !err && <div style={{ color: "#334155" }}>Loading…</div>}
         {err && <div style={{ color: "#b91c1c" }}>{err}</div>}
 
@@ -74,19 +74,20 @@ export function PublicPage() {
               <img src="/company-logo.PNG" alt="Company Logo" style={{ maxHeight: 76, width: "auto" }} />
             </div>
 
-            <div style={{ textAlign: "center", color: "#334155", fontSize: 13, marginBottom: 18 }}>
+            <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 15, marginBottom: 20 }}>
               {headerLine}
             </div>
 
             {(data.preparedFor || data.request) && (
               <div style={{
-                border: "1px solid #e2e8f0",
+                border: "1px solid rgba(148,163,184,.3)",
                 borderRadius: 16,
-                padding: "16px 18px",
-                marginBottom: 18,
-                background: "#ffffff",
-                boxShadow: "0 10px 24px rgba(15,23,42,.08)",
-                textAlign: "center"
+                padding: "16px 20px",
+                margin: "0 auto 20px",
+                background: "rgba(15,23,42,.7)",
+                boxShadow: "0 16px 30px rgba(2,6,23,.45)",
+                textAlign: "center",
+                maxWidth: 620
               }}>
                 {data.preparedFor && (
                   <div style={{ marginBottom: 6 }}>
@@ -102,22 +103,24 @@ export function PublicPage() {
             )}
 
             <div style={{
-              border: "1px solid #e2e8f0",
-              borderRadius: 16,
+              border: "1px solid rgba(148,163,184,.25)",
+              borderRadius: 18,
               overflow: "auto",
-              background: "#ffffff",
-              boxShadow: "0 12px 30px rgba(15,23,42,.08)"
+              background: "rgba(15,23,42,.65)",
+              boxShadow: "0 18px 40px rgba(2,6,23,.55)"
             }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
-                  <tr style={{ background: "linear-gradient(90deg,#e2e8f0 0%, #f8fafc 100%)" }}>
+                  <tr style={{ background: "linear-gradient(90deg,#0f172a 0%, #1e293b 100%)" }}>
                     {data.columns.map((c) => (
                       <th key={c.key} style={{
                         textAlign: "center",
-                        padding: "12px 10px",
-                        borderBottom: "1px solid #e2e8f0",
+                        padding: "14px 10px",
+                        borderBottom: "1px solid rgba(148,163,184,.3)",
                         whiteSpace: "nowrap",
-                        fontWeight: 600
+                        fontWeight: 700,
+                        color: "#f8fafc",
+                        letterSpacing: 0.3
                       }}>
                         {c.label}
                       </th>
@@ -126,11 +129,11 @@ export function PublicPage() {
                 </thead>
                 <tbody>
                   {data.rows.map((r, i) => (
-                    <tr key={i}>
+                    <tr key={i} style={{ background: i % 2 === 0 ? "rgba(30,41,59,.35)" : "transparent" }}>
                       {data.columns.map((c) => (
                         <td key={c.key} style={{
-                          padding: "10px 10px",
-                          borderBottom: "1px solid #f1f5f9",
+                          padding: "12px 10px",
+                          borderBottom: "1px solid rgba(148,163,184,.2)",
                           whiteSpace: "nowrap",
                           textAlign: "center"
                         }}>
