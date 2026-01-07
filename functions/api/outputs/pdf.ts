@@ -53,8 +53,9 @@ function wrapText(text: string, maxWidth: number, font: any, size: number) {
   return lines;
 }
 
-export async function onRequestGet({ params, env }: { params: any; env: Env }) {
-  const slug = String(params.slug || "").trim();
+export async function onRequestGet({ request, env }: { request: Request; env: Env }) {
+  const url = new URL(request.url);
+  const slug = url.searchParams.get("slug")?.trim();
   if (!slug) return new Response("Missing slug", { status: 400 });
 
   const row = await env.DB
@@ -75,8 +76,8 @@ export async function onRequestGet({ params, env }: { params: any; env: Env }) {
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
 
-  const pageWidth = 612; // 8.5in * 72
-  const pageHeight = 792; // 11in * 72
+  const pageWidth = 612;
+  const pageHeight = 792;
   const margin = 48;
   const contentWidth = pageWidth - margin * 2;
 
@@ -101,11 +102,11 @@ export async function onRequestGet({ params, env }: { params: any; env: Env }) {
 
   if (data.preparedFor || data.request) {
     const preparedFor = sanitizeText(data.preparedFor);
-    const request = sanitizeText(data.request);
+    const requestText = sanitizeText(data.request);
     const boxTop = y;
     const boxLines: string[] = [];
     if (preparedFor) boxLines.push(`Prepared For: ${preparedFor}`);
-    if (request) boxLines.push(`Request: ${request}`);
+    if (requestText) boxLines.push(`Request: ${requestText}`);
     const lineHeight = 14;
     const boxHeight = boxLines.length * lineHeight + 12;
     page.drawRectangle({
