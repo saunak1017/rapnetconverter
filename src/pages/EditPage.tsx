@@ -17,6 +17,8 @@ export function EditPage() {
   const [draft, setDraft] = useState<DraftState | null>(null);
   const [rows, setRows] = useState<RapRow[]>([]);
   const [busy, setBusy] = useState(false);
+  const [markupBase, setMarkupBase] = useState("");
+  const [markupPercent, setMarkupPercent] = useState("");
 
   useEffect(() => {
     const d = loadDraft();
@@ -34,7 +36,28 @@ export function EditPage() {
     return draft.columns.filter((c) => !hiddenKeys.has(c.key));
   }, [draft, hiddenKeys]);
 
+  const calculatorResult = useMemo(() => {
+    const base = Number.parseFloat(markupBase);
+    const pct = Number.parseFloat(markupPercent);
+    if (Number.isNaN(base) || Number.isNaN(pct)) return "";
+    return (base * (1 + pct / 100)).toFixed(2);
+  }, [markupBase, markupPercent]);
+
   if (!draft) return null;
+
+  function parseNumber(value: unknown): number | null {
+    const raw = String(value ?? "").trim();
+    if (!raw) return null;
+    const normalized = raw.replace(/[$,]/g, "");
+    const num = Number.parseFloat(normalized);
+    return Number.isNaN(num) ? null : num;
+  }
+
+  function formatSize(value: unknown): string {
+    const num = parseNumber(value);
+    if (num === null) return "";
+    return num.toFixed(2);
+  }
 
   async function generateOutput() {
     if (!draft.preparer) {
@@ -107,8 +130,32 @@ export function EditPage() {
                       <input
                         value={r[c.key] ?? ""}
                         onChange={(e) => {
+                          const value = e.target.value;
                           const next = [...rows];
-                          next[rowIdx] = { ...next[rowIdx], [c.key]: e.target.value };
+                          const row = { ...next[rowIdx], [c.key]: value };
+                          if (c.key === "Total") {
+                            row.__totalManual = true;
+                          }
+
+                          if (c.key === "$/ct" || c.key === "Size") {
+                            const manual = row.__totalManual === true;
+                            if (!manual) {
+                              const price = parseNumber(c.key === "$/ct" ? value : row["$/ct"]);
+                              const size = parseNumber(c.key === "Size" ? value : row["Size"]);
+                              if (price !== null && size !== null) {
+                                row["Total"] = (price * size).toFixed(2);
+                              }
+                            }
+                          }
+
+                          next[rowIdx] = row;
+                          setRows(next);
+                        }}
+                        onBlur={(e) => {
+                          if (c.key !== "Size") return;
+                          const formatted = formatSize(e.target.value);
+                          const next = [...rows];
+                          next[rowIdx] = { ...next[rowIdx], [c.key]: formatted };
                           setRows(next);
                         }}
                       />
@@ -120,8 +167,38 @@ export function EditPage() {
           </table>
         </div>
 
-        <div style={{ marginTop: 12 }} className="small">
-          Tip: This is intentionally simple and “Excel-like”. We can add bulk find/replace, row delete, or column formatting next.
+        <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
+          <div style={{
+            border: "1px solid rgba(148,163,184,.3)",
+            borderRadius: 12,
+            padding: 14,
+            background: "rgba(15,23,42,.3)"
+          }}>
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>Markup Calculator</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              <input
+                className="input"
+                style={{ minWidth: 160 }}
+                placeholder="Base value"
+                value={markupBase}
+                onChange={(e) => setMarkupBase(e.target.value)}
+              />
+              <input
+                className="input"
+                style={{ minWidth: 160 }}
+                placeholder="Markup %"
+                value={markupPercent}
+                onChange={(e) => setMarkupPercent(e.target.value)}
+              />
+              <div className="badge">
+                Result: {calculatorResult ? `$${calculatorResult}` : "—"}
+              </div>
+            </div>
+          </div>
+
+          <div className="small">
+            Tip: This is intentionally simple and “Excel-like”. We can add bulk find/replace, row delete, or column formatting next.
+          </div>
         </div>
       </div>
     </div>
