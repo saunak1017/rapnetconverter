@@ -1,4 +1,4 @@
-export type RapRow = Record<string, string>;
+export type RapRow = Record<string, string | boolean>;
 
 export type ColumnDef = {
   key: string;   // original header key in parsed data
