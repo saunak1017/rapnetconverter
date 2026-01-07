@@ -61,6 +61,10 @@ export function PublicPage() {
     return num.toFixed(2);
   }
 
+  function handleDownloadPdf() {
+    window.print();
+  }
+
   // Client-facing look: lighter background, white page
   return (
     <div style={{ background: "radial-gradient(circle at top, #1f2937 0%, #0f172a 45%, #020617 100%)", minHeight: "100vh", color: "#e2e8f0" }}>
@@ -70,12 +74,29 @@ export function PublicPage() {
 
         {data && (
           <>
+            <style>{`
+              @media print {
+                body {
+                  background: #ffffff !important;
+                  color: #0f172a !important;
+                }
+                .no-print {
+                  display: none !important;
+                }
+              }
+            `}</style>
             <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 6px" }}>
               <img src="/company-logo.PNG" alt="Company Logo" style={{ maxHeight: 76, width: "auto" }} />
             </div>
 
             <div style={{ textAlign: "center", color: "#e2e8f0", fontSize: 15, marginBottom: 20 }}>
               {headerLine}
+            </div>
+
+            <div className="no-print" style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
+              <button className="btn primary" onClick={handleDownloadPdf}>
+                Download PDF
+              </button>
             </div>
 
             {(data.preparedFor || data.request) && (
