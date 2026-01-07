@@ -6,6 +6,7 @@ export function displayLabelForHeader(header: string): string {
   if (h.toLowerCase() === "vendor stock number") return "Stock ID";
   if (h === "$/ct") return "$/ct";
   if (h.toLowerCase() === "%rap" || h === "%Rap") return "%Rap";
+  if (h.toLowerCase() === "lab") return "Lab";
 
   // Title Case-ish for nicer look (keeps acronyms mostly)
   return h
