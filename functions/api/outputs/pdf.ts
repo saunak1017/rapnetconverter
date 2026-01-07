@@ -109,6 +109,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   }
 
   const header = `589 5th Ave, Suite 1107, New York, NY 10017 | ${sanitizeText(data.preparer.email)} | 212-593-2750 - Ext. ${sanitizeText(data.preparer.ext)}`;
+  const title = "Client-Ready Output";
   const titleWidth = fontBold.widthOfTextAtSize(title, 16);
   page.drawText(title, { x: (pageWidth - titleWidth) / 2, y, size: 16, font: fontBold, color: rgb(0.07, 0.1, 0.16) });
   y -= 18;
