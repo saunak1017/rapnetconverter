@@ -21,6 +21,9 @@ export async function parseRapnetFile(file: File): Promise<{ columns: string[]; 
 
   const headersRaw = sheetAsArrays[0] || [];
   const headers = headersRaw.map((h, idx) => cleanHeader(h, idx));
+  const keptHeaders = headers
+    .map((h, idx) => ({ header: h, idx }))
+    .filter(({ header }) => header.toLowerCase() !== "item page");
 
   const rows: RapRow[] = [];
   for (let r = 1; r < sheetAsArrays.length; r++) {
@@ -30,11 +33,11 @@ export async function parseRapnetFile(file: File): Promise<{ columns: string[]; 
     if (isEmpty) continue;
 
     const obj: RapRow = {};
-    headers.forEach((h, idx) => {
-      obj[h] = String(rowArr[idx] ?? "").trim();
+    keptHeaders.forEach(({ header, idx }) => {
+      obj[header] = String(rowArr[idx] ?? "").trim();
     });
     rows.push(obj);
   }
 
-  return { columns: headers, rows };
+  return { columns: keptHeaders.map(({ header }) => header), rows };
 }
