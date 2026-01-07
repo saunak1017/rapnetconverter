@@ -67,7 +67,7 @@ export function PublicPage() {
     const userName = window.prompt("Name your PDF file:", baseName);
     if (userName === null) return;
     const safeName = userName.trim() || baseName;
-    const res = await fetch(`/api/outputs/${slug}/pdf`);
+    const res = await fetch(`/api/outputs/pdf?slug=${encodeURIComponent(slug)}`);
     if (!res.ok) {
       alert("PDF generation failed. Please try again.");
       return;
