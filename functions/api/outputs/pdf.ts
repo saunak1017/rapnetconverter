@@ -93,6 +93,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
     });
     y -= 14;
   };
+
   const logoResponse = await fetch(new URL("/company-logo.PNG", request.url));
   if (logoResponse.ok) {
     const logoBytes = new Uint8Array(await logoResponse.arrayBuffer());
@@ -109,12 +110,8 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   }
 
   const header = `589 5th Ave, Suite 1107, New York, NY 10017 | ${sanitizeText(data.preparer.email)} | 212-593-2750 - Ext. ${sanitizeText(data.preparer.ext)}`;
-  const title = "Client-Ready Output";
-  const titleWidth = fontBold.widthOfTextAtSize(title, 16);
-  page.drawText(title, { x: (pageWidth - titleWidth) / 2, y, size: 16, font: fontBold, color: rgb(0.07, 0.1, 0.16) });
-  y -= 18;
   const headerWidth = font.widthOfTextAtSize(header, 10);
-  page.drawText(header, { x: (pageWidth - headerWidth) / 2, y, size: 10, font, color: rgb(0.25, 0.3, 0.38) });
+  page.drawText(header, { x: (pageWidth - headerWidth) / 2, y, size: 10, font, color: rgb(0.1, 0.24, 0.45) });
   y -= 16;
 
   if (data.preparedFor || data.request) {
@@ -133,7 +130,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
       width: boxWidth,
       height: boxHeight,
       color: rgb(0.96, 0.97, 0.99),
-      borderColor: rgb(0.85, 0.87, 0.9),
+      borderColor: rgb(0.8, 0.86, 0.94),
       borderWidth: 1,
     });
     y = boxTop - 10;
@@ -158,15 +155,19 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   const colWidth = contentWidth / colCount;
   const headerY = y;
   const rowHeight = 20;
+  const headerFill = rgb(0.9, 0.93, 0.97);
+  const gridColor = rgb(0.86, 0.89, 0.93);
+  const zebraFill = rgb(0.97, 0.98, 0.99);
 
+  const headerRowY = headerY - rowHeight + 4;
+  page.drawRectangle({
+    x: margin,
+    y: headerRowY,
+    width: contentWidth,
+    height: rowHeight,
+    color: headerFill,
+  });
   columns.forEach((c, i) => {
-    page.drawRectangle({
-      x: margin + i * colWidth,
-      y: headerY - rowHeight + 4,
-      width: colWidth,
-      height: rowHeight,
-      color: rgb(0.93, 0.94, 0.96),
-    });
     const label = sanitizeText(c.label);
     const labelWidth = fontBold.widthOfTextAtSize(label, 9);
     page.drawText(label, {
@@ -174,19 +175,39 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
       y: headerY - 12,
       size: 9,
       font: fontBold,
-      color: rgb(0.1, 0.13, 0.18),
+      color: rgb(0.06, 0.1, 0.16),
     });
   });
   y = headerY - rowHeight - 6;
+  for (let i = 0; i <= colCount; i += 1) {
+    const x = margin + i * colWidth;
+    page.drawLine({
+      start: { x, y: headerRowY },
+      end: { x, y: headerRowY + rowHeight },
+      thickness: 0.6,
+      color: gridColor,
+    });
+  }
 
   const currencyKeys = new Set(["$/ct", "Total"]);
   const sizeKeys = new Set(["Size"]);
 
-  for (const rowData of data.rows ?? []) {
+  const rows = data.rows ?? [];
+  rows.forEach((rowData, rowIndex) => {
     if (y < margin + rowHeight * 2) {
       page = pdf.addPage([pageWidth, pageHeight]);
       y = pageHeight - margin;
       drawLine();
+    }
+
+    if (columns.length > 0) {
+      page.drawRectangle({
+        x: margin,
+        y: y - rowHeight + 4,
+        width: contentWidth,
+        height: rowHeight,
+        color: rowIndex % 2 === 0 ? zebraFill : rgb(1, 1, 1),
+      });
     }
 
     columns.forEach((c, i) => {
@@ -208,8 +229,25 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
         });
       });
     });
+
+    for (let i = 0; i <= colCount; i += 1) {
+      const x = margin + i * colWidth;
+      page.drawLine({
+        start: { x, y: y - rowHeight + 4 },
+        end: { x, y: y + 4 },
+        thickness: 0.5,
+        color: gridColor,
+      });
+    }
+    page.drawLine({
+      start: { x: margin, y: y - rowHeight + 4 },
+      end: { x: margin + contentWidth, y: y - rowHeight + 4 },
+      thickness: 0.6,
+      color: gridColor,
+    });
+
     y -= rowHeight;
-  }
+  });
 
   const pdfBytes = await pdf.save();
   return new Response(pdfBytes, {
