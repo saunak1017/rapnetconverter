@@ -136,7 +136,7 @@ export function PublicPage() {
                         }}>
                           {currencyKeys.has(c.key)
                             ? formatCurrency(r[c.key])
-                            : sizeKeys.has(c.key)
+                            : (sizeKeys.has(c.key) || c.key.trim().toLowerCase() === "size" || c.label.trim().toLowerCase() === "size")
                               ? formatSize(r[c.key])
                               : (r[c.key] ?? "")}
                         </td>
