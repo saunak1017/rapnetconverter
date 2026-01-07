@@ -61,8 +61,24 @@ export function PublicPage() {
     return num.toFixed(2);
   }
 
-  function handleDownloadPdf() {
-    window.print();
+  async function handleDownloadPdf() {
+    if (!slug) return;
+    const baseName = data?.preparedFor?.trim() || "client-output";
+    const userName = window.prompt("Name your PDF file:", baseName);
+    if (userName === null) return;
+    const safeName = userName.trim() || baseName;
+    const res = await fetch(`/api/outputs/${slug}/pdf`);
+    if (!res.ok) {
+      alert("PDF generation failed. Please try again.");
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${safeName}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   // Client-facing look: lighter background, white page
@@ -74,17 +90,6 @@ export function PublicPage() {
 
         {data && (
           <>
-            <style>{`
-              @media print {
-                body {
-                  background: #ffffff !important;
-                  color: #0f172a !important;
-                }
-                .no-print {
-                  display: none !important;
-                }
-              }
-            `}</style>
             <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 6px" }}>
               <img src="/company-logo.PNG" alt="Company Logo" style={{ maxHeight: 76, width: "auto" }} />
             </div>
