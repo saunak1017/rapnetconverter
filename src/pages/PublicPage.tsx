@@ -37,30 +37,43 @@ export function PublicPage() {
     return `589 5th Ave, Suite 1107, New York, NY 10017 | ${data.preparer.email} | 212-593-2750 - Ext. ${data.preparer.ext}`;
   }, [data]);
 
+  const currencyKeys = useMemo(() => new Set(["$/ct", "Total"]), []);
+
+  function formatCurrency(value: unknown) {
+    const raw = String(value ?? "").trim();
+    if (!raw) return "";
+    const normalized = raw.replace(/[$,]/g, "");
+    const num = Number.parseFloat(normalized);
+    if (Number.isNaN(num)) return raw;
+    return `$${num.toFixed(2)}`;
+  }
+
   // Client-facing look: lighter background, white page
   return (
-    <div style={{ background: "#ffffff", minHeight: "100vh", color: "#0b1220" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: 22 }}>
+    <div style={{ background: "linear-gradient(180deg,#f8fafc 0%, #ffffff 50%)", minHeight: "100vh", color: "#0b1220" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 22px 40px" }}>
         {!data && !err && <div style={{ color: "#334155" }}>Loading…</div>}
         {err && <div style={{ color: "#b91c1c" }}>{err}</div>}
 
         {data && (
           <>
             <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 6px" }}>
-              <img src="/company-logo.png" alt="Company Logo" style={{ maxHeight: 72, width: "auto" }} />
+              <img src="/company-logo.PNG" alt="Company Logo" style={{ maxHeight: 76, width: "auto" }} />
             </div>
 
-            <div style={{ textAlign: "center", color: "#334155", fontSize: 13, marginBottom: 14 }}>
+            <div style={{ textAlign: "center", color: "#334155", fontSize: 13, marginBottom: 18 }}>
               {headerLine}
             </div>
 
             {(data.preparedFor || data.request) && (
               <div style={{
                 border: "1px solid #e2e8f0",
-                borderRadius: 12,
-                padding: 14,
-                marginBottom: 14,
-                background: "#f8fafc"
+                borderRadius: 16,
+                padding: "16px 18px",
+                marginBottom: 18,
+                background: "#ffffff",
+                boxShadow: "0 10px 24px rgba(15,23,42,.08)",
+                textAlign: "center"
               }}>
                 {data.preparedFor && (
                   <div style={{ marginBottom: 6 }}>
@@ -77,14 +90,22 @@ export function PublicPage() {
 
             <div style={{
               border: "1px solid #e2e8f0",
-              borderRadius: 12,
-              overflow: "auto"
+              borderRadius: 16,
+              overflow: "auto",
+              background: "#ffffff",
+              boxShadow: "0 12px 30px rgba(15,23,42,.08)"
             }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
-                  <tr style={{ background: "#f1f5f9" }}>
+                  <tr style={{ background: "linear-gradient(90deg,#e2e8f0 0%, #f8fafc 100%)" }}>
                     {data.columns.map((c) => (
-                      <th key={c.key} style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" }}>
+                      <th key={c.key} style={{
+                        textAlign: "center",
+                        padding: "12px 10px",
+                        borderBottom: "1px solid #e2e8f0",
+                        whiteSpace: "nowrap",
+                        fontWeight: 600
+                      }}>
                         {c.label}
                       </th>
                     ))}
@@ -94,8 +115,13 @@ export function PublicPage() {
                   {data.rows.map((r, i) => (
                     <tr key={i}>
                       {data.columns.map((c) => (
-                        <td key={c.key} style={{ padding: 10, borderBottom: "1px solid #f1f5f9", whiteSpace: "nowrap" }}>
-                          {r[c.key] ?? ""}
+                        <td key={c.key} style={{
+                          padding: "10px 10px",
+                          borderBottom: "1px solid #f1f5f9",
+                          whiteSpace: "nowrap",
+                          textAlign: "center"
+                        }}>
+                          {currencyKeys.has(c.key) ? formatCurrency(r[c.key]) : (r[c.key] ?? "")}
                         </td>
                       ))}
                     </tr>
