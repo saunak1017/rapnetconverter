@@ -38,14 +38,27 @@ export function PublicPage() {
   }, [data]);
 
   const currencyKeys = useMemo(() => new Set(["$/ct", "Total"]), []);
+  const sizeKeys = useMemo(() => new Set(["Size"]), []);
 
-  function formatCurrency(value: unknown) {
+  function formatNumber(value: unknown) {
     const raw = String(value ?? "").trim();
     if (!raw) return "";
     const normalized = raw.replace(/[$,]/g, "");
     const num = Number.parseFloat(normalized);
-    if (Number.isNaN(num)) return raw;
+    if (Number.isNaN(num)) return null;
+    return num;
+  }
+
+  function formatCurrency(value: unknown) {
+    const num = formatNumber(value);
+    if (num === null) return String(value ?? "");
     return `$${num.toFixed(2)}`;
+  }
+
+  function formatSize(value: unknown) {
+    const num = formatNumber(value);
+    if (num === null) return String(value ?? "");
+    return num.toFixed(2);
   }
 
   // Client-facing look: lighter background, white page
@@ -121,7 +134,11 @@ export function PublicPage() {
                           whiteSpace: "nowrap",
                           textAlign: "center"
                         }}>
-                          {currencyKeys.has(c.key) ? formatCurrency(r[c.key]) : (r[c.key] ?? "")}
+                          {currencyKeys.has(c.key)
+                            ? formatCurrency(r[c.key])
+                            : sizeKeys.has(c.key)
+                              ? formatSize(r[c.key])
+                              : (r[c.key] ?? "")}
                         </td>
                       ))}
                     </tr>
