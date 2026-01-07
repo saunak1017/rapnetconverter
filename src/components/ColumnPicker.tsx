@@ -12,7 +12,9 @@ function Item({
   hidden: boolean;
   toggleHidden: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: col.key });
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+    id: col.key,
+  });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -30,10 +32,31 @@ function Item({
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        <div style={{ fontWeight: 600 }}>{col.label}</div>
-        <div className="small">{col.key}</div>
+    <div ref={setNodeRef} style={style}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div
+          ref={setActivatorNodeRef}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            background: "rgba(148,163,184,.2)",
+            cursor: "grab",
+            color: "#cbd5f5",
+            fontSize: 16,
+          }}
+          {...attributes}
+          {...listeners}
+        >
+          ↕
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <div style={{ fontWeight: 600 }}>{col.label}</div>
+          <div className="small">{col.key}</div>
+        </div>
       </div>
       <button className="btn" type="button" onClick={(e) => { e.stopPropagation(); toggleHidden(); }}>
         {hidden ? "Show" : "Hide"}
