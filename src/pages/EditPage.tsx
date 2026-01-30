@@ -20,6 +20,9 @@ export function EditPage() {
   const [busy, setBusy] = useState(false);
   const [markupBase, setMarkupBase] = useState("");
   const [markupPercent, setMarkupPercent] = useState("");
+  const [calcWeight, setCalcWeight] = useState("");
+  const [calcPerCarat, setCalcPerCarat] = useState("");
+  const [calcTotalPrice, setCalcTotalPrice] = useState("");
 
   useEffect(() => {
     const d = loadDraft();
@@ -70,6 +73,62 @@ export function EditPage() {
     const num = parseNumber(value);
     if (num === null) return "";
     return num.toFixed(2);
+  }
+
+  function formatCurrencyValue(value: number | null): string {
+    if (value === null || Number.isNaN(value)) return "";
+    return value.toFixed(2);
+  }
+
+  function updateTotalCalculator(next: {
+    weight: string;
+    perCarat: string;
+    total: string;
+  }) {
+    const weightNum = parseNumber(next.weight);
+    const perCaratNum = parseNumber(next.perCarat);
+    const totalNum = parseNumber(next.total);
+
+    const filled = [
+      weightNum !== null,
+      perCaratNum !== null,
+      totalNum !== null
+    ].filter(Boolean).length;
+
+    if (filled < 2) {
+      setCalcWeight(next.weight);
+      setCalcPerCarat(next.perCarat);
+      setCalcTotalPrice(next.total);
+      return;
+    }
+
+    if (weightNum === null && perCaratNum !== null && totalNum !== null && perCaratNum !== 0) {
+      const computed = totalNum / perCaratNum;
+      setCalcWeight(formatCurrencyValue(computed));
+      setCalcPerCarat(next.perCarat);
+      setCalcTotalPrice(next.total);
+      return;
+    }
+
+    if (perCaratNum === null && weightNum !== null && totalNum !== null && weightNum !== 0) {
+      const computed = totalNum / weightNum;
+      setCalcWeight(next.weight);
+      setCalcPerCarat(formatCurrencyValue(computed));
+      setCalcTotalPrice(next.total);
+      return;
+    }
+
+    if (totalNum === null && weightNum !== null && perCaratNum !== null) {
+      const computed = weightNum * perCaratNum;
+      setCalcWeight(next.weight);
+      setCalcPerCarat(next.perCarat);
+      setCalcTotalPrice(formatCurrencyValue(computed));
+      return;
+    }
+
+    setCalcWeight(next.weight);
+    setCalcPerCarat(next.perCarat);
+    setCalcTotalPrice(next.total);
   }
 
   async function generateOutput() {
@@ -213,6 +272,62 @@ export function EditPage() {
               <div className="badge">
                 Result: {calculatorResult ? `$${calculatorResult}` : "—"}
               </div>
+            </div>
+          </div>
+
+          <div style={{
+            border: "1px solid rgba(148,163,184,.3)",
+            borderRadius: 12,
+            padding: 14,
+            background: "rgba(15,23,42,.3)"
+          }}>
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>Total Price Calculator</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              <input
+                className="input"
+                style={{ minWidth: 160 }}
+                placeholder="Weight"
+                value={calcWeight}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  updateTotalCalculator({
+                    weight: value,
+                    perCarat: calcPerCarat,
+                    total: calcTotalPrice
+                  });
+                }}
+              />
+              <input
+                className="input"
+                style={{ minWidth: 160 }}
+                placeholder="$/ct"
+                value={calcPerCarat}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  updateTotalCalculator({
+                    weight: calcWeight,
+                    perCarat: value,
+                    total: calcTotalPrice
+                  });
+                }}
+              />
+              <input
+                className="input"
+                style={{ minWidth: 160 }}
+                placeholder="Total price"
+                value={calcTotalPrice}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  updateTotalCalculator({
+                    weight: calcWeight,
+                    perCarat: calcPerCarat,
+                    total: value
+                  });
+                }}
+              />
+            </div>
+            <div className="small" style={{ marginTop: 8 }}>
+              Enter any two values to auto-calculate the third.
             </div>
           </div>
 
