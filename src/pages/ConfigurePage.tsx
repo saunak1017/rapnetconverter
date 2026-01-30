@@ -44,7 +44,7 @@ export function ConfigurePage() {
       <div className="card">
         <div className="h1">Configure Output</div>
         <p className="p">
-          Reorder columns, hide anything you don’t want, and fill the header fields.
+          Reorder columns, rename display labels, hide anything you don’t want, and fill the header fields.
         </p>
 
         <div className="row">
