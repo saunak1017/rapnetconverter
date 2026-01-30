@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { isPerCaratColumn, isSizeColumn, isTotalColumn } from "../lib/columnMatchers";
 import type { DraftState, RapRow, ColumnDef } from "../lib/types";
 
 function loadDraft(): DraftState | null {
@@ -35,6 +36,18 @@ export function EditPage() {
     if (!draft) return [];
     return draft.columns.filter((c) => !hiddenKeys.has(c.key));
   }, [draft, hiddenKeys]);
+  const perCaratKey = useMemo(
+    () => draft?.columns.find((c) => isPerCaratColumn(c))?.key ?? null,
+    [draft]
+  );
+  const sizeKey = useMemo(
+    () => draft?.columns.find((c) => isSizeColumn(c))?.key ?? null,
+    [draft]
+  );
+  const totalKey = useMemo(
+    () => draft?.columns.find((c) => isTotalColumn(c))?.key ?? null,
+    [draft]
+  );
 
   const calculatorResult = useMemo(() => {
     const base = Number.parseFloat(markupBase);
@@ -133,17 +146,24 @@ export function EditPage() {
                           const value = e.target.value;
                           const next = [...rows];
                           const row = { ...next[rowIdx], [c.key]: value };
-                          if (c.key === "Total") {
+                          if (isTotalColumn(c)) {
                             row.__totalManual = true;
                           }
 
-                          if (c.key === "$/ct" || c.key === "Size") {
+                          if (isPerCaratColumn(c) || isSizeColumn(c)) {
                             const manual = row.__totalManual === true;
                             if (!manual) {
-                              const price = parseNumber(c.key === "$/ct" ? value : row["$/ct"]);
-                              const size = parseNumber(c.key === "Size" ? value : row["Size"]);
-                              if (price !== null && size !== null) {
-                                row["Total"] = (price * size).toFixed(2);
+                              const priceKey = perCaratKey ?? (isPerCaratColumn(c) ? c.key : null);
+                              const sizeKeyValue = sizeKey ?? (isSizeColumn(c) ? c.key : null);
+                              if (priceKey && sizeKeyValue) {
+                                const priceRaw = isPerCaratColumn(c) ? value : row[priceKey];
+                                const sizeRaw = isSizeColumn(c) ? value : row[sizeKeyValue];
+                                const price = parseNumber(priceRaw);
+                                const size = parseNumber(sizeRaw);
+                                if (price !== null && size !== null) {
+                                  const targetTotalKey = totalKey ?? "Total";
+                                  row[targetTotalKey] = (price * size).toFixed(2);
+                                }
                               }
                             }
                           }
@@ -152,7 +172,7 @@ export function EditPage() {
                           setRows(next);
                         }}
                         onBlur={(e) => {
-                          if (c.key !== "Size") return;
+                          if (!isSizeColumn(c)) return;
                           const formatted = formatSize(e.target.value);
                           const next = [...rows];
                           next[rowIdx] = { ...next[rowIdx], [c.key]: formatted };
