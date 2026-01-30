@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
+import { isCurrencyColumn, isSizeColumn } from "../lib/columnMatchers";
 import type { ColumnDef, Preparer, RapRow } from "../lib/types";
 
 type OutputPayload = {
@@ -36,9 +37,6 @@ export function PublicPage() {
     if (!data) return "";
     return `589 5th Ave, Suite 1107, New York, NY 10017 | ${data.preparer.email} | 212-593-2750 - Ext. ${data.preparer.ext}`;
   }, [data]);
-
-  const currencyKeys = useMemo(() => new Set(["$/ct", "Total"]), []);
-  const sizeKeys = useMemo(() => new Set(["Size"]), []);
 
   function formatNumber(value: unknown) {
     const raw = String(value ?? "").trim();
@@ -163,9 +161,9 @@ export function PublicPage() {
                           whiteSpace: "nowrap",
                           textAlign: "center"
                         }}>
-                          {currencyKeys.has(c.key)
+                          {isCurrencyColumn(c)
                             ? formatCurrency(r[c.key])
-                            : (sizeKeys.has(c.key) || c.key.trim().toLowerCase() === "size" || c.label.trim().toLowerCase() === "size")
+                            : isSizeColumn(c)
                               ? formatSize(r[c.key])
                               : (r[c.key] ?? "")}
                         </td>
