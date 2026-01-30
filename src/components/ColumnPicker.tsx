@@ -7,10 +7,12 @@ function Item({
   col,
   hidden,
   toggleHidden,
+  onRename,
 }: {
   col: ColumnDef;
   hidden: boolean;
   toggleHidden: () => void;
+  onRename: (value: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: col.key,
@@ -53,9 +55,16 @@ function Item({
         >
           ↕
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <div style={{ fontWeight: 600 }}>{col.label}</div>
-          <div className="small">{col.key}</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div className="small">Display label</div>
+          <input
+            className="input"
+            value={col.label}
+            onChange={(e) => onRename(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            style={{ minWidth: 200 }}
+          />
+          <div className="small">Original header: {col.key}</div>
         </div>
       </div>
       <button className="btn" type="button" onClick={(e) => { e.stopPropagation(); toggleHidden(); }}>
@@ -108,6 +117,12 @@ export function ColumnPicker({
                   if (next.has(c.key)) next.delete(c.key);
                   else next.add(c.key);
                   setHiddenKeys(next);
+                }}
+                onRename={(value) => {
+                  const next = columns.map((col) =>
+                    col.key === c.key ? { ...col, label: value } : col
+                  );
+                  setColumns(next);
                 }}
               />
             ))}
