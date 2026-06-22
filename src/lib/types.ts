@@ -1,5 +1,11 @@
 export type RapRow = Record<string, string | boolean>;
 
+export type MediaAttachment = {
+  fileName: string;
+  mediaType: "image" | "video";
+  dataUrl: string;
+};
+
 export type ColumnDef = {
   key: string;   // original header key in parsed data
   label: string; // display label
@@ -18,4 +24,5 @@ export type DraftState = {
   preparedFor: string;
   request: string;
   preparer: Preparer | null;
+  mediaByRowIndex?: Record<string, MediaAttachment>;
 };

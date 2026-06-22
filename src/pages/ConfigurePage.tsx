@@ -9,9 +9,15 @@ function loadDraft(): DraftState | null {
   return raw ? (JSON.parse(raw) as DraftState) : null;
 }
 
+function loadMediaSummary(): { selectedCount: number; matchedCount: number; unmatchedNames: string[] } | null {
+  const raw = sessionStorage.getItem("mediaUploadSummary");
+  return raw ? JSON.parse(raw) : null;
+}
+
 export function ConfigurePage() {
   const nav = useNavigate();
   const [draft, setDraft] = useState<DraftState | null>(null);
+  const [mediaSummary, setMediaSummary] = useState<ReturnType<typeof loadMediaSummary>>(null);
 
   const [hiddenKeys, setHiddenKeysState] = useState<Set<string>>(new Set());
 
@@ -22,6 +28,7 @@ export function ConfigurePage() {
       return;
     }
     setDraft(d);
+    setMediaSummary(loadMediaSummary());
 
     const hk = sessionStorage.getItem("hiddenKeys");
     if (hk) setHiddenKeysState(new Set(JSON.parse(hk) as string[]));
@@ -102,6 +109,19 @@ export function ConfigurePage() {
               <div className="badge">
                 {draft.rows.length} diamonds • {visibleColumns.length} columns visible
               </div>
+
+              {mediaSummary && mediaSummary.selectedCount > 0 && (
+                <div className="small">
+                  Media matched: {mediaSummary.matchedCount} of {mediaSummary.selectedCount}
+                  {mediaSummary.unmatchedNames.length > 0 && (
+                    <>
+                      <br />
+                      Unmatched: {mediaSummary.unmatchedNames.slice(0, 5).join(", ")}
+                      {mediaSummary.unmatchedNames.length > 5 ? "…" : ""}
+                    </>
+                  )}
+                </div>
+              )}
 
               <div style={{ display: "flex", gap: 10 }}>
                 <button className="btn" onClick={() => nav("/", { replace: true })}>Start over</button>

@@ -144,6 +144,7 @@ export function EditPage() {
         preparer: draft.preparer,
         columns: visibleCols,
         rows,
+        mediaByRowIndex: draft.mediaByRowIndex ?? {},
       };
 
       const res = await fetch("/api/outputs", {
