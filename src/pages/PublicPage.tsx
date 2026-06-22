@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { isCurrencyColumn, isSizeColumn } from "../lib/columnMatchers";
-import type { ColumnDef, Preparer, RapRow } from "../lib/types";
+import type { ColumnDef, MediaAttachment, Preparer, RapRow } from "../lib/types";
 
 type OutputPayload = {
   preparedFor: string;
@@ -10,12 +10,14 @@ type OutputPayload = {
   columns: ColumnDef[];
   rows: RapRow[];
   createdAt: string;
+  mediaByRowIndex?: Record<string, MediaAttachment>;
 };
 
 export function PublicPage() {
   const { slug } = useParams();
   const [data, setData] = useState<OutputPayload | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [expandedRowIndex, setExpandedRowIndex] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -149,27 +151,106 @@ export function PublicPage() {
                         {c.label}
                       </th>
                     ))}
+                    <th style={{
+                      textAlign: "center",
+                      padding: "14px 10px",
+                      borderBottom: "1px solid rgba(148,163,184,.3)",
+                      whiteSpace: "nowrap",
+                      fontWeight: 700,
+                      color: "#f8fafc",
+                      letterSpacing: 0.3
+                    }}>
+                      Image / Video
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.rows.map((r, i) => (
-                    <tr key={i} style={{ background: i % 2 === 0 ? "rgba(30,41,59,.35)" : "transparent" }}>
-                      {data.columns.map((c) => (
-                        <td key={c.key} style={{
-                          padding: "12px 10px",
-                          borderBottom: "1px solid rgba(148,163,184,.2)",
-                          whiteSpace: "nowrap",
-                          textAlign: "center"
-                        }}>
-                          {isCurrencyColumn(c)
-                            ? formatCurrency(r[c.key])
-                            : isSizeColumn(c)
-                              ? formatSize(r[c.key])
-                              : (r[c.key] ?? "")}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
+                  {data.rows.map((r, i) => {
+                    const media = data.mediaByRowIndex?.[String(i)];
+                    const isExpanded = expandedRowIndex === i;
+                    return (
+                      <Fragment key={i}>
+                        <tr key={`row-${i}`} style={{ background: i % 2 === 0 ? "rgba(30,41,59,.35)" : "transparent" }}>
+                          {data.columns.map((c) => (
+                            <td key={c.key} style={{
+                              padding: "12px 10px",
+                              borderBottom: "1px solid rgba(148,163,184,.2)",
+                              whiteSpace: "nowrap",
+                              textAlign: "center"
+                            }}>
+                              {isCurrencyColumn(c)
+                                ? formatCurrency(r[c.key])
+                                : isSizeColumn(c)
+                                  ? formatSize(r[c.key])
+                                  : (r[c.key] ?? "")}
+                            </td>
+                          ))}
+                          <td style={{
+                            padding: "12px 10px",
+                            borderBottom: "1px solid rgba(148,163,184,.2)",
+                            whiteSpace: "nowrap",
+                            textAlign: "center"
+                          }}>
+                            {media ? (
+                              <button
+                                className="btn"
+                                style={{ padding: "7px 10px", fontSize: 12 }}
+                                onClick={() => setExpandedRowIndex(isExpanded ? null : i)}
+                              >
+                                {isExpanded
+                                  ? "Hide Media"
+                                  : media.mediaType === "video"
+                                    ? "▶ View Video"
+                                    : "📷 View Image"}
+                              </button>
+                            ) : (
+                              <span style={{ color: "#94a3b8" }}>No Media</span>
+                            )}
+                          </td>
+                        </tr>
+                        {media && isExpanded && (
+                          <tr key={`media-${i}`}>
+                            <td colSpan={data.columns.length + 1} style={{
+                              padding: "18px",
+                              borderBottom: "1px solid rgba(148,163,184,.2)",
+                              background: "rgba(2,6,23,.45)",
+                              textAlign: "center"
+                            }}>
+                              <div style={{ color: "#cbd5e1", fontSize: 12, marginBottom: 10 }}>
+                                {media.fileName}
+                              </div>
+                              {media.mediaType === "video" ? (
+                                <video
+                                  controls
+                                  src={media.dataUrl}
+                                  style={{
+                                    width: "min(720px, 100%)",
+                                    maxHeight: 520,
+                                    borderRadius: 14,
+                                    border: "1px solid rgba(148,163,184,.25)",
+                                    background: "#020617"
+                                  }}
+                                />
+                              ) : (
+                                <img
+                                  src={media.dataUrl}
+                                  alt={media.fileName}
+                                  style={{
+                                    maxWidth: "min(720px, 100%)",
+                                    maxHeight: 520,
+                                    borderRadius: 14,
+                                    border: "1px solid rgba(148,163,184,.25)",
+                                    objectFit: "contain",
+                                    background: "#020617"
+                                  }}
+                                />
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
