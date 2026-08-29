@@ -26,3 +26,4 @@ in the much smaller session storage quota.
 - Build output directory: `dist`
 - Add a D1 binding named `DB` to your Pages project
 - Create a D1 database and run the migration in `migrations/0001_init.sql`
+- Apply `migrations/0002_media_chunks.sql` to existing databases before deploying media uploads

@@ -167,7 +167,10 @@ export function EditPage() {
 
       if (!res.ok) {
         const txt = await res.text();
-        throw new Error(txt || "Failed to generate output.");
+        const message = txt.trim().startsWith("<!DOCTYPE") || txt.trim().startsWith("<html")
+          ? "The server could not save this output. Check that all database migrations are applied."
+          : txt;
+        throw new Error(message || "Failed to generate output.");
       }
 
       const data = await res.json() as { slug: string };
