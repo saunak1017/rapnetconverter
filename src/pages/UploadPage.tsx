@@ -3,22 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { parseRapnetFile } from "../lib/parseFile";
 import { displayLabelForHeader } from "../lib/headerMap";
 import type { DraftState, ColumnDef, MediaAttachment, RapRow } from "../lib/types";
-
-const MEDIA_EXTENSIONS = new Set(["png", "jpg", "jpeg", "mp4"]);
-const STOCK_ID_HEADERS = ["stock id", "lot id", "vendor stock number"];
-
-function getExtension(fileName: string) {
-  return fileName.split(".").pop()?.toLowerCase() ?? "";
-}
-
-function getBaseName(fileName: string) {
-  const lastDot = fileName.lastIndexOf(".");
-  return (lastDot >= 0 ? fileName.slice(0, lastDot) : fileName).trim().toLowerCase();
-}
-
-function findStockKey(columns: string[]) {
-  return columns.find((column) => STOCK_ID_HEADERS.includes(column.trim().toLowerCase())) ?? null;
-}
+import {
+  buildRowIndexByMediaId,
+  getMediaBaseName,
+  getMediaExtension,
+  MEDIA_EXTENSIONS,
+} from "../lib/mediaMatching";
+import { saveDraftMedia } from "../lib/draftMediaStorage";
 
 function readAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -34,23 +25,17 @@ async function buildMediaByRowIndex(
   columns: string[],
   rows: RapRow[]
 ): Promise<{ mediaByRowIndex: Record<string, MediaAttachment>; matchedCount: number; unmatchedNames: string[] }> {
-  const stockKey = findStockKey(columns);
-  if (!stockKey || mediaFiles.length === 0) {
+  const rowIndexByMediaId = buildRowIndexByMediaId(columns, rows);
+  if (rowIndexByMediaId.size === 0 || mediaFiles.length === 0) {
     return { mediaByRowIndex: {}, matchedCount: 0, unmatchedNames: mediaFiles.map((file) => file.name) };
   }
-
-  const rowIndexByStoneId = new Map<string, number>();
-  rows.forEach((row, index) => {
-    const stoneId = String(row[stockKey] ?? "").trim().toLowerCase();
-    if (stoneId && !rowIndexByStoneId.has(stoneId)) rowIndexByStoneId.set(stoneId, index);
-  });
 
   const mediaByRowIndex: Record<string, MediaAttachment> = {};
   const unmatchedNames: string[] = [];
 
   for (const file of mediaFiles) {
-    const extension = getExtension(file.name);
-    const rowIndex = rowIndexByStoneId.get(getBaseName(file.name));
+    const extension = getMediaExtension(file.name);
+    const rowIndex = rowIndexByMediaId.get(getMediaBaseName(file.name));
     if (!MEDIA_EXTENSIONS.has(extension) || rowIndex === undefined || mediaByRowIndex[rowIndex]) {
       unmatchedNames.push(file.name);
       continue;
@@ -101,9 +86,11 @@ export function UploadPage() {
         preparedFor: "",
         request: "",
         preparer: null,
-        mediaByRowIndex,
       };
 
+      // Image data URLs are far larger than sessionStorage's small per-origin
+      // quota, so keep them in IndexedDB and only store the text draft here.
+      await saveDraftMedia(mediaByRowIndex);
       sessionStorage.setItem("draft", JSON.stringify(draft));
       sessionStorage.setItem("hiddenKeys", JSON.stringify([]));
       sessionStorage.setItem("mediaUploadSummary", JSON.stringify({
@@ -140,7 +127,7 @@ export function UploadPage() {
 
         <div style={{ marginTop: 16 }}>
           <div className="small" style={{ marginBottom: 8 }}>
-            Optional stone image/video files. File names should match Stock ID, Lot ID, or Vendor Stock Number.
+            Optional stone image/video files. File names should match Style Number, Stock ID, Lot ID, or Vendor Stock Number.
           </div>
           <input
             className="input"

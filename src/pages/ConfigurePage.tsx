@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import type { DraftState, ColumnDef } from "../lib/types";
 import { ColumnPicker } from "../components/ColumnPicker";
 import { PreparerSelect } from "../components/PreparerSelect";
+import { clearDraftMedia } from "../lib/draftMediaStorage";
 
 function loadDraft(): DraftState | null {
   const raw = sessionStorage.getItem("draft");
@@ -124,7 +125,15 @@ export function ConfigurePage() {
               )}
 
               <div style={{ display: "flex", gap: 10 }}>
-                <button className="btn" onClick={() => nav("/", { replace: true })}>Start over</button>
+                <button
+                  className="btn"
+                  onClick={() => {
+                    void clearDraftMedia();
+                    nav("/", { replace: true });
+                  }}
+                >
+                  Start over
+                </button>
                 <button
                   className="btn primary"
                   onClick={() => {
