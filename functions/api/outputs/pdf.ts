@@ -17,8 +17,9 @@ function formatCurrency(value: unknown) {
   const raw = String(value ?? "").trim();
   if (!raw) return "";
   const normalized = raw.replace(/[$,]/g, "");
-  const num = Number.parseFloat(normalized);
-  if (Number.isNaN(num)) return raw;
+  if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized)) return raw;
+  const num = Number(normalized);
+  if (!Number.isFinite(num)) return raw;
   return `$${num.toFixed(2)}`;
 }
 
