@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { isCurrencyColumn, isSizeColumn } from "../lib/columnMatchers";
+import { formatCurrency } from "../lib/formatValues";
 import type { ColumnDef, MediaAttachment, Preparer, RapRow } from "../lib/types";
 
 type OutputPayload = {
@@ -47,12 +48,6 @@ export function PublicPage() {
     const num = Number.parseFloat(normalized);
     if (Number.isNaN(num)) return null;
     return num;
-  }
-
-  function formatCurrency(value: unknown) {
-    const num = formatNumber(value);
-    if (num === null) return String(value ?? "");
-    return `$${num.toFixed(2)}`;
   }
 
   function formatSize(value: unknown) {

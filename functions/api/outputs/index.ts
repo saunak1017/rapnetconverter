@@ -2,6 +2,14 @@ export interface Env {
   DB: D1Database;
 }
 
+const MEDIA_CHUNK_SIZE = 400_000;
+
+type MediaAttachment = {
+  fileName: string;
+  mediaType: "image" | "video";
+  dataUrl: string;
+};
+
 function makeSlug(len = 8): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const bytes = crypto.getRandomValues(new Uint8Array(len));
@@ -48,12 +56,44 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
   }
   if (!slug) return new Response("Failed to create unique slug", { status: 500 });
 
-  const payload = JSON.stringify({ ...body, createdAt });
+  const mediaByRowIndex = (body.mediaByRowIndex ?? {}) as Record<string, MediaAttachment>;
+  const mediaManifest = Object.fromEntries(
+    Object.entries(mediaByRowIndex).map(([rowIndex, media]) => [rowIndex, {
+      fileName: media.fileName,
+      mediaType: media.mediaType,
+    }])
+  );
+  const payload = JSON.stringify({
+    ...body,
+    mediaByRowIndex: mediaManifest,
+    createdAt,
+  });
 
-  await env.DB
-    .prepare("INSERT INTO rapnet_outputs (id, slug, created_at, payload) VALUES (?1, ?2, ?3, ?4)")
-    .bind(id, slug, createdAt, payload)
-    .run();
+  try {
+    await env.DB
+      .prepare("INSERT INTO rapnet_outputs (id, slug, created_at, payload) VALUES (?1, ?2, ?3, ?4)")
+      .bind(id, slug, createdAt, payload)
+      .run();
+
+    for (const [rowIndex, media] of Object.entries(mediaByRowIndex)) {
+      if (!media?.dataUrl) continue;
+      for (let offset = 0, chunkIndex = 0; offset < media.dataUrl.length; offset += MEDIA_CHUNK_SIZE, chunkIndex += 1) {
+        await env.DB
+          .prepare(`INSERT INTO rapnet_output_media_chunks
+            (output_id, row_index, chunk_index, data) VALUES (?1, ?2, ?3, ?4)`)
+          .bind(id, rowIndex, chunkIndex, media.dataUrl.slice(offset, offset + MEDIA_CHUNK_SIZE))
+          .run();
+      }
+    }
+  } catch (error) {
+    await env.DB.prepare("DELETE FROM rapnet_output_media_chunks WHERE output_id = ?1").bind(id).run().catch(() => undefined);
+    await env.DB.prepare("DELETE FROM rapnet_outputs WHERE id = ?1").bind(id).run().catch(() => undefined);
+    console.error("Failed to save output", error);
+    return new Response(
+      "Failed to save the output. Make sure database migration 0002_media_chunks.sql has been applied.",
+      { status: 500 }
+    );
+  }
 
   return json({ slug });
 }
