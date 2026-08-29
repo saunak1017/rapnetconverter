@@ -17,6 +17,9 @@ Number in the spreadsheet. Matching is case-insensitive and supports uppercase f
 Currency ranges entered in a price field (for example, `$10,545 - $11,995`) are preserved as
 entered in both the shareable output and downloaded PDF.
 
+Uploaded media is kept in the browser's IndexedDB while an output is being prepared, rather than
+in the much smaller session storage quota.
+
 ## Deploy (Cloudflare Pages)
 - Connect this GitHub repo to Cloudflare Pages
 - Build command: `npm run build`

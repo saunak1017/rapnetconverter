@@ -9,6 +9,7 @@ import {
   getMediaExtension,
   MEDIA_EXTENSIONS,
 } from "../lib/mediaMatching";
+import { saveDraftMedia } from "../lib/draftMediaStorage";
 
 function readAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -85,9 +86,11 @@ export function UploadPage() {
         preparedFor: "",
         request: "",
         preparer: null,
-        mediaByRowIndex,
       };
 
+      // Image data URLs are far larger than sessionStorage's small per-origin
+      // quota, so keep them in IndexedDB and only store the text draft here.
+      await saveDraftMedia(mediaByRowIndex);
       sessionStorage.setItem("draft", JSON.stringify(draft));
       sessionStorage.setItem("hiddenKeys", JSON.stringify([]));
       sessionStorage.setItem("mediaUploadSummary", JSON.stringify({

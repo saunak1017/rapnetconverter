@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { isPerCaratColumn, isSizeColumn, isTotalColumn } from "../lib/columnMatchers";
 import type { DraftState, RapRow, ColumnDef } from "../lib/types";
+import { loadDraftMedia } from "../lib/draftMediaStorage";
 
 function loadDraft(): DraftState | null {
   const raw = sessionStorage.getItem("draft");
@@ -30,8 +31,19 @@ export function EditPage() {
       nav("/", { replace: true });
       return;
     }
-    setDraft(d);
-    setRows(d.rows);
+    let cancelled = false;
+    loadDraftMedia()
+      .then((mediaByRowIndex) => {
+        if (cancelled) return;
+        setDraft({ ...d, mediaByRowIndex });
+        setRows(d.rows);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setDraft(d);
+        setRows(d.rows);
+      });
+    return () => { cancelled = true; };
   }, [nav]);
 
   const hiddenKeys = useMemo(() => loadHiddenKeys(), []);
