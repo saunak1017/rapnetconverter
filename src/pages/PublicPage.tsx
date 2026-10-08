@@ -3,6 +3,9 @@ import { useParams } from "react-router-dom";
 import { isCurrencyColumn, isSizeColumn } from "../lib/columnMatchers";
 import { formatCurrency } from "../lib/formatValues";
 import type { ColumnDef, MediaAttachment, Preparer, RapRow } from "../lib/types";
+import { getRequestColumns, getStoneSummary } from "../lib/proposalRequests";
+import type { RequestColumns, StoneSelection } from "../lib/proposalRequests";
+import { ProposalRequestDialog } from "../components/ProposalRequestDialog";
 
 type OutputPayload = {
   preparedFor: string;
@@ -12,6 +15,7 @@ type OutputPayload = {
   rows: RapRow[];
   createdAt: string;
   mediaByRowIndex?: Record<string, MediaAttachment>;
+  requestColumns?: RequestColumns;
 };
 
 export function PublicPage() {
@@ -19,9 +23,17 @@ export function PublicPage() {
   const [data, setData] = useState<OutputPayload | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [expandedRowIndex, setExpandedRowIndex] = useState<number | null>(null);
+  const [selections, setSelections] = useState<Record<number, StoneSelection>>({});
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    setData(null);
+    setSelections({});
+    setRequestOpen(false);
+    setRequestSent(false);
+    setExpandedRowIndex(null);
     (async () => {
       try {
         setErr(null);
@@ -41,9 +53,14 @@ export function PublicPage() {
     return `589 5th Ave, Suite 1107, New York, NY 10017 | ${data.preparer.email} | 212-593-2750 - Ext. ${data.preparer.ext}`;
   }, [data]);
 
+  const requestColumns = useMemo(() => data
+    ? data.requestColumns ?? getRequestColumns(data.columns, data.rows)
+    : { styleNumber: null, perCarat: null, total: null }, [data]);
+  const selectedCount = Object.keys(selections).length;
+
   function formatNumber(value: unknown) {
     const raw = String(value ?? "").trim();
-    if (!raw) return "";
+    if (!raw) return null;
     const normalized = raw.replace(/[$,]/g, "");
     const num = Number.parseFloat(normalized);
     if (Number.isNaN(num)) return null;
@@ -133,6 +150,7 @@ export function PublicPage() {
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: "linear-gradient(90deg,#0f172a 0%, #1e293b 100%)" }}>
+                    <th className="request-selection-cell no-print" scope="col">Memo/Hold</th>
                     {data.columns.map((c) => (
                       <th key={c.key} style={{
                         textAlign: "center",
@@ -166,6 +184,24 @@ export function PublicPage() {
                     return (
                       <Fragment key={i}>
                         <tr key={`row-${i}`} style={{ background: i % 2 === 0 ? "rgba(30,41,59,.35)" : "transparent" }}>
+                          <td className="request-selection-cell no-print">
+                            <input
+                              type="checkbox"
+                              aria-label={`Select ${getStoneSummary(r, requestColumns).styleNumber}, stone ${i + 1}`}
+                              checked={Boolean(selections[i])}
+                              disabled={!selections[i] && selectedCount >= 100}
+                              onChange={(event) => {
+                                const checked = event.target.checked;
+                                setRequestSent(false);
+                                setSelections((current) => {
+                                  const next = { ...current };
+                                  if (checked) next[i] = { type: "memo", comments: "" };
+                                  else delete next[i];
+                                  return next;
+                                });
+                              }}
+                            />
+                          </td>
                           {data.columns.map((c) => (
                             <td key={c.key} style={{
                               padding: "12px 10px",
@@ -205,7 +241,7 @@ export function PublicPage() {
                         </tr>
                         {media && isExpanded && (
                           <tr key={`media-${i}`}>
-                            <td colSpan={data.columns.length + 1} style={{
+                            <td colSpan={data.columns.length + 2} style={{
                               padding: "18px",
                               borderBottom: "1px solid rgba(148,163,184,.2)",
                               background: "rgba(2,6,23,.45)",
@@ -249,6 +285,35 @@ export function PublicPage() {
                 </tbody>
               </table>
             </div>
+
+            <div className="request-submit-bar no-print">
+              <span>{selectedCount} {selectedCount === 1 ? "stone" : "stones"} selected</span>
+              <button className="btn primary" disabled={selectedCount === 0} onClick={() => setRequestOpen(true)}>
+                Submit request
+              </button>
+            </div>
+            {selectedCount >= 100 && <p className="small no-print">You can request up to 100 stones at a time.</p>}
+            {requestSent && (
+              <p className="request-success no-print" role="status">
+                Your request has been sent. Shivani Gems will confirm availability and fulfillment.
+              </p>
+            )}
+            {slug && <ProposalRequestDialog
+              key={slug}
+              open={requestOpen}
+              slug={slug}
+              customerName={data.preparedFor}
+              rows={data.rows}
+              columns={requestColumns}
+              selections={selections}
+              onChange={(rowIndex, selection) => setSelections((current) => ({ ...current, [rowIndex]: selection }))}
+              onClose={() => setRequestOpen(false)}
+              onSent={() => {
+                setRequestOpen(false);
+                setSelections({});
+                setRequestSent(true);
+              }}
+            />}
 
             <div style={{ marginTop: 12, fontSize: 12, color: "#64748b", textAlign: "center" }}>
               Generated by Shivani Gems internal tool
