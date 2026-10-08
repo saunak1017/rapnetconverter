@@ -5,4 +5,4 @@ dist/
 .dev.vars.*
 .env
 .env.*
-!.env.exampl
+!.env.example
