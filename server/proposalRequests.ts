@@ -55,7 +55,7 @@ function parseBody(value: unknown): RequestBody | null {
 export function buildTemplateVariables(proposal: Proposal, body: RequestBody, proposalUrl: string) {
   const columns = proposal.requestColumns ?? getRequestColumns(proposal.columns, proposal.rows);
   const cellStyle = "border:1px solid #d1d5db;padding:10px;text-align:left;vertical-align:top;";
-  const headers = ["Style number", "$/ct", "Total price", "Request", "Comments"]
+  const headers = ["Stone ID", "$/ct", "Total price", "Request", "Comments"]
     .map((label) => `<th scope="col" style="${cellStyle}background:#f3f4f6;">${label}</th>`).join("");
   const rows = body.selections.map((selection) => {
     const stone = getStoneSummary(proposal.rows[selection.rowIndex], columns);

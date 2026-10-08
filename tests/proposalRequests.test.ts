@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import { buildTemplateVariables, submitProposalRequest, TEMPLATE_ID } from "../server/proposalRequests";
-import { getRequestColumns } from "../src/lib/proposalRequests";
+import { getRequestColumns, getStoneSummary } from "../src/lib/proposalRequests";
 
 const slug = "ABCD2345";
 const proposal = {
@@ -54,7 +54,7 @@ function fixture() {
 
 test("hidden and renamed columns retain original style and price keys", () => {
   assert.deepEqual(getRequestColumns(proposal.columns, proposal.rows), {
-    styleNumber: "Style No.", perCarat: "$/ct", total: "Total",
+    styleNumber: "Style No.", identifierKeys: ["Style No."], perCarat: "$/ct", total: "Total",
   });
 });
 
@@ -182,4 +182,30 @@ test("rate limit bounds new requests but still allows retries of accepted reques
   assert.equal((await submitProposalRequest(f.request(requestBody()), f.env, slug, f.send)).status, 429);
   assert.equal((await submitProposalRequest(f.request(first), f.env, slug, f.send)).status, 200);
   assert.equal(f.sent.length, 10);
+});
+
+
+test("Stock ID and Lot ID reach the email table for existing proposals", () => {
+  for (const key of ["Stock ID", "Lot ID", "Vendor Stock Number"]) {
+    const rows = [{ [key]: "ID<&>" }];
+    const columns = [{ key, label: "Renamed reference" }];
+    const variables = buildTemplateVariables({
+      preparedFor: "Customer", rows, columns,
+      requestColumns: { styleNumber: null, perCarat: null, total: null },
+    }, { ...requestBody(), selections: [{ rowIndex: 0, type: "memo", comments: "" }] }, "https://proposal.example/r/ABCD2345");
+    assert.match(variables.STONES_TABLE, />Stone ID</);
+    assert.match(variables.STONES_TABLE, /ID&lt;&amp;&gt;/);
+    assert.doesNotMatch(variables.STONES_TABLE, />Style number</);
+  }
+});
+
+test("identifier fallback is per stone and preserves priority across hidden columns", () => {
+  const rows = [
+    { "Style Number": "STYLE1", "Stock ID": "STOCK1", "Lot ID": "LOT1" },
+    { "Style Number": " ", "Stock ID": "STOCK2", "Lot ID": "LOT2" },
+    { "Style Number": "", "Stock ID": "", "Lot ID": "LOT3" },
+  ];
+  const columns = getRequestColumns([{ key: "Lot ID", label: "Reference" }], rows);
+  assert.deepEqual(rows.map((row) => getStoneSummary(row, columns).styleNumber), ["STYLE1", "STOCK2", "LOT3"]);
+  assert.equal(getStoneSummary({}, columns).styleNumber, "Not provided");
 });

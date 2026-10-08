@@ -36,7 +36,10 @@ Memo/Hold choice and optional comments. General notes are optional. Submission
 requests fulfillment; it does not automatically reserve inventory.
 
 The server reads the customer name from the proposal's **Prepared For** field
-and resolves style number, $/ct, and total price from the saved proposal rows.
+and resolves the Stone ID, $/ct, and total price from the saved proposal rows.
+Stone ID uses the first nonblank value in this order: Style Number, Stock ID,
+Lot ID, then Vendor Stock Number. This also works for existing proposals and
+hidden or renamed identifier columns; the Resend template variables are unchanged.
 New proposals retain the original request-column keys even when display columns
 are hidden or renamed. Older proposals use their existing column keys and row
 headers. Missing values are shown as **Not provided**, rather than guessed.

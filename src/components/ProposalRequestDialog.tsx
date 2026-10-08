@@ -90,7 +90,7 @@ export function ProposalRequestDialog({ open, slug, customerName, rows, columns,
             <table className="request-summary-table">
               <thead>
                 <tr>
-                  <th scope="col">Style number</th>
+                  <th scope="col">Stone ID</th>
                   <th scope="col">$/ct</th>
                   <th scope="col">Total price</th>
                   <th scope="col">Request</th>
@@ -104,7 +104,7 @@ export function ProposalRequestDialog({ open, slug, customerName, rows, columns,
                   const label = `${stone.styleNumber}, stone ${rowIndex + 1}`;
                   return (
                     <tr key={rowIndex}>
-                      <td data-label="Style number">{stone.styleNumber}</td>
+                      <td data-label="Stone ID">{stone.styleNumber}</td>
                       <td data-label="$/ct">{stone.perCarat}</td>
                       <td data-label="Total price">{stone.total}</td>
                       <td data-label="Request">
