@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { isPerCaratColumn, isSizeColumn, isTotalColumn } from "../lib/columnMatchers";
 import type { DraftState, RapRow, ColumnDef } from "../lib/types";
 import { loadDraftMedia } from "../lib/draftMediaStorage";
+import { getRequestColumns } from "../lib/proposalRequests";
 
 function loadDraft(): DraftState | null {
   const raw = sessionStorage.getItem("draft");
@@ -144,7 +145,7 @@ export function EditPage() {
   }
 
   async function generateOutput() {
-    if (!draft.preparer) {
+    if (!draft?.preparer) {
       alert("Missing preparer.");
       return;
     }
@@ -155,6 +156,7 @@ export function EditPage() {
         request: draft.request,
         preparer: draft.preparer,
         columns: visibleCols,
+        requestColumns: getRequestColumns(draft.columns, rows),
         rows,
         mediaByRowIndex: draft.mediaByRowIndex ?? {},
       };
@@ -216,7 +218,7 @@ export function EditPage() {
                   {visibleCols.map((c) => (
                     <td key={c.key}>
                       <input
-                        value={r[c.key] ?? ""}
+                        value={String(r[c.key] ?? "")}
                         onChange={(e) => {
                           const value = e.target.value;
                           const next = [...rows];

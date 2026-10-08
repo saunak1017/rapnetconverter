@@ -1,0 +1,12 @@
+// Local development only. Production DB binding is configured in Cloudflare Pages.
+{
+  "name": "rapnet-local",
+  "compatibility_date": "2026-10-07",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "DB",
+      "database_id": "00000000-0000-0000-0000-000000000001"
+    }
+  ]
+}
